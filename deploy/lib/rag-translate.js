@@ -66,22 +66,49 @@ export class RagTranslateStack extends Stack {
         aliasName: 'staging',
         version: online_processor.currentVersion,
       });
-  
+      
+      const s3_list_policy = new iam.PolicyStatement({
+        actions: [ 
+            "s3:List*",
+            ],
+          effect: iam.Effect.ALLOW,
+          resources: [bucket.bucketArn],
+      });
+      
+      const s3_rw_policy = new iam.PolicyStatement({
+        actions: [ 
+            "s3:Put*",
+            "s3:Get*",
+            ],
+          effect: iam.Effect.ALLOW,
+          resources: [`${bucket.bucketArn}/*`],
+      });
+      
+      const bedrock_policy = new iam.PolicyStatement({
+        actions: [
+            "bedrock:InvokeModelWithResponseStream",
+            "bedrock:InvokeModel"
+        ],
+        effect: iam.Effect.ALLOW,
+        resources: [
+            `arn:aws:bedrock:*:*:inference-profile/*`,
+            "arn:aws:bedrock:*::foundation-model/*"
+        ],
+      });
+      
+      online_processor.addToRolePolicy(s3_list_policy);
+      online_processor.addToRolePolicy(s3_rw_policy);
+      online_processor.addToRolePolicy(bedrock_policy);
       online_processor.addToRolePolicy(new iam.PolicyStatement({
         // principals: [new iam.AnyPrincipal()],
           actions: [ 
-            "s3:List*",
-            "s3:Put*",
-            "s3:Get*",
-            "bedrock:*",
             "dynamodb:GetItem",
-            "ssm:GetParameter"
             ],
           effect: iam.Effect.ALLOW,
-          resources: ['*'],
-          }))
+          resources: [`arn:aws:dynamodb:${process.env.CDK_DEFAULT_REGION}:${process.env.CDK_DEFAULT_ACCOUNT}:table/translate_*`],
+      }));
 
-          const ingest_ddb_job = new glue.Job(this, 'ingest-knowledge-to-ddb',{
+      const ingest_ddb_job = new glue.Job(this, 'ingest-knowledge-to-ddb',{
             executable: glue.JobExecutable.pythonShell({
             glueVersion: glue.GlueVersion.V1_0,
             pythonVersion: glue.PythonVersion.THREE_NINE,
@@ -97,20 +124,19 @@ export class RagTranslateStack extends Stack {
               '--bucket': process.env.UPLOAD_BUCKET,
               '--object_key': 'translate/dictionary_1/dictionary_1_part_a.json'
           }
-      })
-  
+      });
+    
+      ingest_ddb_job.role.addToPrincipalPolicy(s3_list_policy);
+      ingest_ddb_job.role.addToPrincipalPolicy(s3_rw_policy);
       ingest_ddb_job.role.addToPrincipalPolicy(
         new iam.PolicyStatement({
               actions: [ 
-                "s3:List*",
-                "s3:Put*",
-                "s3:Get*",
                 "dynamodb:*",
                 ],
               effect: iam.Effect.ALLOW,
-              resources: ['*'],
+              resources: [`arn:aws:dynamodb:${process.env.CDK_DEFAULT_REGION}:${process.env.CDK_DEFAULT_ACCOUNT}:table/translate_*`],
               })
-      )
+      );
 
       const translation_meta_table = new Table(this, "translation-meta-table", {
         partitionKey: {

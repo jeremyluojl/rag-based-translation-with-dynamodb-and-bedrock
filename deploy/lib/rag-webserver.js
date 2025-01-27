@@ -48,6 +48,8 @@ export class RagWebserverStack extends Stack {
         allowAllOutbound: true,
         description: 'Security group for ALB',
       });
+      
+      //ec2.Peer.ipv4('54.240.199.100/24')
       albSg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'Allow HTTP traffic');
   
       // 创建 EC2 安全组

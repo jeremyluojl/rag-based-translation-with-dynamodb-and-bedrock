@@ -3,7 +3,7 @@ import json
 from typing import Dict, Any, List
 
 # AWS and model configuration
-REGION = 'ap-southeast-1'
+REGION = 'us-east-1'
 MODEL_ID = 'anthropic.claude-3-haiku-20240307-v1:0'
 DICTIONARY_ID = 'rpg'
 SOURCE_LANG = 'en-us'

@@ -66,7 +66,6 @@ You need to follow below instructions:
 - You must format your output to strictly follow the format of the original content. You are prohibited from adding, removing, or merging line breaks.
 - For the terms in <glossaries>, you should keep them as original. 
 - You should refer the term vocabulary correspondence table which is provided between <mapping_table> and </mapping_table>. 
-- If the content is in {dest_lang}(target language) already,  leave it as is
 - Keep the link to the image in markdown format, for example - "![0](icon.png)"
 
 Please translate directly according to the text content, keep the original format, and do not miss any information. 
@@ -452,6 +451,7 @@ def process_request(idx, src_content, src_lang, dest_lang, dictionary_id, reques
 # 对文本进行分词
 # @handle_error
 def lambda_handler(event, context):
+    print(event)
     src_contents = event.get('src_contents')
     src_lang = event.get('src_lang', None)
     dest_lang = event.get('dest_lang')
